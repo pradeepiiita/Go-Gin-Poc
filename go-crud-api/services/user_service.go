@@ -32,6 +32,40 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+func CallWebSocket(c *gin.Context) {
+	serverURL := "ws://localhost:8080/ws"
+
+	// Create WebSocket dialer
+	dialer := websocket.Dialer{}
+	conn, _, err := dialer.Dial(serverURL, nil)
+	if err != nil {
+		log.Printf("Failed to connect to WebSocket server: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to WebSocket server"})
+		return
+	}
+	defer conn.Close()
+	// Send a message to the WebSocket server
+	message := "Hello WebSocket!"
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(message)); err != nil {
+		log.Printf("Failed to send message: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send message"})
+		return
+	}
+	fmt.Println("Message sent to WebSocket server:", message)
+
+	// Read the response from the WebSocket server
+	_, response, err := conn.ReadMessage()
+	if err != nil {
+		log.Printf("Failed to read response: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response"})
+		return
+	}
+	fmt.Println("Received response from WebSocket server:", string(response))
+
+	// Respond with the WebSocket server's message
+	c.JSON(http.StatusOK, gin.H{"message": "Message sent to WebSocket server", "response": string(response)})
+}
+
 func HandleWebSocket(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -45,13 +79,20 @@ func HandleWebSocket(c *gin.Context) {
 
 	// Listen to incoming WebSocket messages (if needed)
 	for {
-		_, msg, err := conn.ReadMessage()
+		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("Read error:", err)
 			delete(clients, client)
 			break
 		}
-		log.Println("Received message:", string(msg))
+		log.Println("Received message:", string(message))
+		// Process the message and send a response
+		response := fmt.Sprintf("Server received: %s", message)
+		err = conn.WriteMessage(messageType, []byte(response))
+		if err != nil {
+			log.Println("Error writing message:", err)
+			break
+		}
 	}
 }
 

@@ -30,7 +30,7 @@ func ValidationMiddleware(obj interface{}) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
+		c.Set("validatedData", obj)
 		// Proceed to the next middleware/handler if valid
 		c.Next()
 	}

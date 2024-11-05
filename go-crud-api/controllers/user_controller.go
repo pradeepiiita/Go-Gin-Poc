@@ -29,6 +29,16 @@ func GetUsers(ctx *gin.Context) {
 	})
 }
 
+// @Summary Login to get bearer token
+// @Description Pass username and password
+// @Tags User
+// @Accept json
+// @Produce json
+// @Param username  path string true "User Name"
+// @Param password  path string true "Password"
+// @Success 200 {object} map[string]interface{}
+// @Failure 404 {object} map[string]string
+// @Router /user/login [post]
 func Login(ctx *gin.Context) {
 	username := ctx.PostForm("username")
 	password := ctx.PostForm("password")
@@ -84,15 +94,22 @@ func PostUserNew(db *gorm.DB) gin.HandlerFunc {
 }
 
 func PostUser(ctx *gin.Context) {
-	var user models.User
-	err := ctx.Bind(&user)
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+	validatedData, exists := ctx.Get("validatedData")
+	if !exists {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve validated data"})
 		return
 	}
-	res, err := services.CreateUser(&user)
+	user := validatedData.(*models.User)
+	// @Summary Create a new user
+	// @Description This endpoint creates a new user
+	// @Tags Users
+	// @Accept json
+	// @Produce json
+	// @Param user body User true "User data"
+	// @Success 200 {object} User
+	// @Failure 400 {object} string
+	// @Router /users [post]
+	res, err := services.CreateUser(user)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
