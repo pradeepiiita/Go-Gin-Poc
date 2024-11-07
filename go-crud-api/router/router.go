@@ -16,6 +16,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"google.golang.org/grpc"
 	gintrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/gin-gonic/gin"
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 	"net/http"
 	"os"
 	"time"
@@ -41,7 +42,13 @@ func InitRouter() *gin.Engine {
 	router.Use(gin.Recovery())
 
 	router.Use(utils.GuidMiddleware())
-	router.Use(gintrace.Middleware(os.Getenv("DD_SERVICE")))
+	// Start the Datadog tracer
+	tracer.Start(
+		tracer.WithAgentAddr("localhost:8126"), // Address of the Datadog Agent
+		tracer.WithServiceName("go-crud-api"),
+	)
+	defer tracer.Stop()
+	router.Use(gintrace.Middleware("go-crud-api"))
 	// Swagger route
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	// Simple route
