@@ -1,0 +1,37 @@
+info:
+  contact: {}
+paths:
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      description: Pass username and password
+      parameters:
+      - description: User Name
+        in: path
+        name: username
+        required: true
+        type: string
+      - description: Password
+        in: path
+        name: password
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login to get bearer token
+      tags:
+      - User
+swagger: "2.0"
